@@ -1,61 +1,73 @@
- (setq visible-bell 1)
+;; Editor preferences
+(menu-bar-mode -1)
+(setq visible-bell 1)
+(column-number-mode 1)
+(ido-mode)
 
-;; el-get
-(add-to-list 'load-path "~/.emacs.d/el-get/el-get")
+(add-to-list 'custom-theme-load-path "~/.emacs.d/elpa/color-theme-solarized-20120301")
+(load-theme 'solarized-dark t)
 
-(unless (require 'el-get nil t)
-  (with-current-buffer
-      (url-retrieve-synchronously
-       "https://raw.github.com/dimitri/el-get/master/el-get-install.el")
-    (end-of-buffer)
-    (eval-print-last-sexp)))
+;; Package manager config
+(require 'package)
+(add-to-list 'package-archives 
+    '("marmalade" .
+      "http://marmalade-repo.org/packages/"))
+(package-initialize)
 
-(el-get 'sync)
-
-;; Shell stuff
-(let ((path (shell-command-to-string ". ~/.bash_login; echo -n $PATH")))
-  (setenv "PATH" path)
-  (setq exec-path 
-        (append
-         (split-string-and-unquote path ":")
-         exec-path)))
-
-;; Clojure stuff
-(add-to-list 'auto-mode-alist '("\.cljs$" . clojure-mode))
-(setq explicit-bash-args '("--login" "--init-file" "~/.bash_profile" "-i"))
+;; Clojure mode
 (show-paren-mode t)
-(add-to-list 'load-path "~/.emacs.d/")
 (require 'clojure-mode)
+(add-hook 'clojure-mode-hook '(lambda () (paredit-mode)))
 
-;; Org-mode
-(setq load-path (cons "~/.emacs.d/org-7.8.05/lisp" load-path))
-(setq load-path (cons "~/.emacs.d/org-7.8.05/contrib/lisp" load-path))
+;; Haskell mode
+(require 'haskell-mode)
+(add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
+
+;; Auto complete
+(defun indent-or-expand (arg)
+  "Either indent according to mode, or expand the word preceding
+point."
+  (interactive "*P")
+  (if (and
+       (or (bobp) (= ?w (char-syntax (char-before))))
+       (or (eobp) (not (= ?w (char-syntax (char-after))))))
+      (dabbrev-expand arg)
+    (indent-according-to-mode)))
+
+(defun my-tab-fix ()
+  (local-set-key [tab] 'indent-or-expand))
+
+(my-tab-fix)
+
+;; orgmode
 (require 'org-install)
-(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
-(define-key global-map "\C-cl" 'org-store-link)
-(define-key global-map "\C-ca" 'org-agenda)
-(setq org-log-done t)
 
-(setq org-agenda-files (list 
-                        "~/Dropbox/org/ejorp.org"
-                        "~/Dropbox/org/emacs.org"))
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cb" 'org-iswitchb)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(org-agenda-files (quote ("~/org/notes.org")))
+ '(org-default-notes-file (concat org-directory "/notes.org"))
+)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
 
-(require 'org-mac-message)
-(setq org-startup-indented t)
-
-(setq org-default-notes-file (concat org-directory "/notes.org"))
-(define-key global-map "\C-cc" 'org-capture)
-
-;; Tabs
-(setq-default tab-width 2) ; or any other preferred value
-(setq-default indent-tabs-mode nil)
-(setq js-indent-level 2)
-
-;; Remember
-(global-set-key (kbd "C-c r") 'remember)    ;; (1)
-(add-hook 'remember-mode-hook 'org-remember-apply-template) ;; (2)
-(setq org-remember-templates
-      '((?n "* %U %?\n\n  %i\n  %a" "~/org/notes.org")))  ;; (3)
-(setq remember-annotation-functions '(org-remember-annotation)) ;; (4)
-(setq remember-handler-functions '(org-remember-handler)) ;; (5)
+(setq org-todo-keyword-faces
+      (quote (("TODO" :foreground "red" :weight bold)
+              ("NEXT" :foreground "blue" :weight bold)
+              ("DONE" :foreground "forest green" :weight bold)
+              ("WAITING" :foreground "orange" :weight bold)
+              ("HOLD" :foreground "magenta" :weight bold)
+              ("CANCELLED" :foreground "forest green" :weight bold)
+              ("PHONE" :foreground "forest green" :weight bold))))
